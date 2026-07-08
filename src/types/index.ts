@@ -82,6 +82,9 @@ export interface NameStyleWeights {
   neutral: number;
 }
 
+/** 名字在各风格维度上的倾向画像（0-100） */
+export type NameStyleProfile = Record<NameStyle, number>;
+
 /** 筛选条件 */
 export interface FilterOptions {
   /** 避开生僻字 */
@@ -171,6 +174,8 @@ export interface CandidateName {
   comprehensiveScore: string;
   /** 推荐理由（一句话） */
   recommendation: string;
+  /** 风格画像（各风格维度 0-100 的占比倾向） */
+  styleProfile?: NameStyleProfile;
 }
 
 export interface NameScores {
@@ -228,6 +233,8 @@ export interface NameSummary {
   meaning: string;
   /** 推荐理由（一句话） */
   recommendation: string;
+  /** 风格画像（各风格维度 0-100 的占比倾向） */
+  styleProfile?: NameStyleProfile;
 }
 
 /** LLM 生成接口的返回结构 */
@@ -262,6 +269,8 @@ export interface AnalyzeResponse {
   poetryOrigin?: PoetryOrigin;
   tabooCheck: TabooCheck;
   comprehensiveScore: string;
+  /** 风格画像（分析时可选补充） */
+  styleProfile?: NameStyleProfile;
   /** 八字信息（分析名字时如提供出生时间则返回） */
   bazi?: BaziInfo;
 }

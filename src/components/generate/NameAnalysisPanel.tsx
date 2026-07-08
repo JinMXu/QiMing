@@ -2,8 +2,9 @@
 
 import { useState } from "react";
 import { cn } from "@/lib/utils/cn";
-import type { CandidateName, BaziInfo, Wuxing } from "@/types";
+import type { CandidateName, BaziInfo, Wuxing, NameStyle, NameStyleProfile } from "@/types";
 import { WUXING_LABELS } from "@/types";
+import { STYLE_LABELS } from "@/lib/utils/style";
 import { HeartIcon } from "./icons";
 
 type TabKey = "bazi" | "phonetic" | "glyph" | "meaning" | "poetry" | "taboo";
@@ -135,6 +136,9 @@ export function NameAnalysisPanel({
         activeCompare={compareActive}
         onActivateCompare={setCompareActive}
       />
+
+      {/* 风格画像 */}
+      <StyleProfileBlock profile={name.styleProfile} />
 
       {/* 综合评价 */}
       <div className="rounded-2xl border border-stone-200 bg-white p-5 shadow-sm">
@@ -416,4 +420,40 @@ function wuxingBadge(wx: Wuxing): string {
     water: "bg-blue-100 text-blue-700",
   };
   return map[wx];
+}
+
+function StyleProfileBlock({ profile }: { profile?: NameStyleProfile }) {
+  if (!profile) {
+    return (
+      <div className="rounded-2xl border border-stone-200 bg-white p-5 shadow-sm">
+        <h3 className="mb-3 text-sm font-bold text-stone-800">风格画像</h3>
+        <p className="text-sm text-stone-400">暂无风格画像数据</p>
+      </div>
+    );
+  }
+
+  const entries = (Object.entries(profile) as [NameStyle, number][]).sort((a, b) => b[1] - a[1]);
+
+  return (
+    <div className="rounded-2xl border border-stone-200 bg-white p-5 shadow-sm">
+      <h3 className="mb-4 text-sm font-bold text-stone-800">风格画像</h3>
+      <div className="space-y-2.5">
+        {entries.map(([key, score]) => (
+          <div key={key} className="flex items-center gap-3">
+            <span className="w-16 text-xs text-stone-500">{STYLE_LABELS[key]}</span>
+            <div className="h-2 flex-1 overflow-hidden rounded-full bg-stone-100">
+              <div
+                className={cn(
+                  "h-full rounded-full transition-all",
+                  score >= 70 ? "bg-amber-500" : score >= 40 ? "bg-amber-300" : "bg-stone-300",
+                )}
+                style={{ width: `${score}%` }}
+              />
+            </div>
+            <span className="w-8 text-right text-xs font-medium text-stone-600">{score}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 }

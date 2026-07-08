@@ -35,16 +35,9 @@ import {
   type FavoriteItem,
 } from "@/lib/utils/storage";
 import { cn } from "@/lib/utils/cn";
+import { getDefaultWeightsForStyle } from "@/lib/utils/style";
 
-const DEFAULT_STYLE_WEIGHTS: NameStyleWeights = {
-  classical: 50,
-  modern: 50,
-  literary: 50,
-  majestic: 50,
-  elegant: 50,
-  cute: 50,
-  neutral: 50,
-};
+const DEFAULT_STYLE_WEIGHTS = getDefaultWeightsForStyle("literary");
 
 const DEFAULT_FILTERS: FilterOptions = {
   avoidRareChars: true,
@@ -158,7 +151,7 @@ export default function GeneratePage() {
     if (!form.surname.trim()) return { error: "请输入姓氏" };
 
     const solarDateTime = form.birthDateTime
-      ? convertToSolarDateTime(form.birthDateTime, form.calendarType)
+      ? (convertToSolarDateTime(form.birthDateTime, form.calendarType) ?? undefined)
       : undefined;
 
     return {

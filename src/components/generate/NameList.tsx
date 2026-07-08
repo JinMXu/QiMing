@@ -1,9 +1,10 @@
 "use client";
 
 import { cn } from "@/lib/utils/cn";
-import type { CandidateName, Wuxing } from "@/types";
+import type { CandidateName, Wuxing, NameStyle, NameStyleProfile } from "@/types";
 import { WUXING_LABELS } from "@/types";
 import { isFavorite } from "@/lib/utils/storage";
+import { STYLE_LABELS } from "@/lib/utils/style";
 import { useEffect, useState } from "react";
 
 export type SortKey = "default" | "wuxing" | "phonetic" | "meaning";
@@ -298,9 +299,10 @@ export function NameList({
                   </button>
                 </div>
 
-                {/* 寓意摘要（横跨整行） */}
-                {(name.meaning || name.recommendation) && (
-                  <div className="border-t border-stone-100 px-3 py-1.5">
+                {/* 风格标签 + 寓意摘要（横跨整行） */}
+                {(name.meaning || name.recommendation || name.styleProfile) && (
+                  <div className="flex items-center gap-2 border-t border-stone-100 px-3 py-1.5">
+                    <StyleTag profile={name.styleProfile} />
                     <p className="truncate text-xs text-stone-500">
                       {name.meaning || name.recommendation}
                     </p>
@@ -346,6 +348,18 @@ export function NameList({
         </div>
       )}
     </div>
+  );
+}
+
+function StyleTag({ profile }: { profile?: NameStyleProfile }) {
+  if (!profile) return null;
+  const entries = Object.entries(profile) as [NameStyle, number][];
+  const [style, score] = entries.sort((a, b) => b[1] - a[1])[0] ?? [null, 0];
+  if (!style || score < 30) return null;
+  return (
+    <span className="shrink-0 rounded bg-stone-100 px-1.5 py-0.5 text-[10px] font-medium text-stone-600">
+      {STYLE_LABELS[style]} {score}
+    </span>
   );
 }
 

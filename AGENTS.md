@@ -54,7 +54,7 @@ src/
 │   ├── naming/            # 取名核心引擎
 │   ├── poetry/            # 诗词典故引擎
 │   ├── data/              # 数据加载层
-│   └── utils/             # 工具函数（cn 等）
+│   └── utils/             # 工具函数（cn、风格偏好工具等）
 ├── data/                  # 静态数据资源
 │   ├── characters/        # 汉字字库
 │   ├── poetry/            # 诗词库

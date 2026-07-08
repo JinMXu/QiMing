@@ -10,6 +10,11 @@ import {
   formatBirthPlace,
 } from "@/lib/utils/area";
 import {
+  getDefaultWeightsForStyle,
+  STYLE_LABELS,
+  STYLE_ORDER,
+} from "@/lib/utils/style";
+import {
   getLunarYearOptions,
   getLunarMonthOptions,
   getLunarDayOptions,
@@ -27,15 +32,9 @@ const GENDER_OPTIONS: { value: Gender; label: string }[] = [
   { value: "neutral", label: "中性" },
 ];
 
-const STYLE_OPTIONS: { value: NameStyle; label: string }[] = [
-  { value: "classical", label: "古典文雅" },
-  { value: "elegant", label: "温润平和" },
-  { value: "majestic", label: "明朗大气" },
-  { value: "literary", label: "诗词典故" },
-  { value: "modern", label: "现代简约" },
-  { value: "cute", label: "俏皮可爱" },
-  { value: "neutral", label: "中性大方" },
-];
+const STYLE_OPTIONS: { value: NameStyle; label: string }[] = STYLE_ORDER.map(
+  (value) => ({ value, label: STYLE_LABELS[value] }),
+);
 
 export interface BabyInfoFormData {
   surname: string;
@@ -118,13 +117,6 @@ export function BabyInfoForm({
     onChange({
       ...value,
       styleWeights: { ...value.styleWeights, [style]: weight },
-      // 自动将权重最高的设为主风格
-      style: (() => {
-        const next = { ...value.styleWeights, [style]: weight };
-        const maxStyle = (Object.entries(next).sort((a, b) => b[1] - a[1])[0]?.[0] ??
-          value.style) as NameStyle;
-        return maxStyle;
-      })(),
     });
   };
 
@@ -355,29 +347,52 @@ export function BabyInfoForm({
 
       <SectionTitle icon="🎨" title="风格偏好" />
 
-      <div className="space-y-3 rounded-xl border border-stone-100 bg-stone-50/50 p-3">
-        {STYLE_OPTIONS.map((opt) => (
-          <div key={opt.value} className="flex items-center gap-3">
-            <span className="w-16 text-xs text-stone-500">{opt.label}</span>
-            <input
-              type="range"
-              min={0}
-              max={100}
-              value={value.styleWeights[opt.value]}
-              onChange={(e) => updateStyleWeight(opt.value, Number(e.target.value))}
-              className="h-1.5 flex-1 cursor-pointer appearance-none rounded-full bg-stone-200 accent-emerald-600"
-            />
-            <span className="w-8 text-right text-xs font-medium text-stone-600">
-              {value.styleWeights[opt.value]}
-            </span>
+      <div className="space-y-4 rounded-xl border border-stone-100 bg-stone-50/50 p-3">
+        <Field label="风格基调">
+          <div className="grid grid-cols-4 gap-2">
+            {STYLE_OPTIONS.map((opt) => (
+              <button
+                key={opt.value}
+                type="button"
+                onClick={() =>
+                  onChange({
+                    ...value,
+                    style: opt.value,
+                    styleWeights: getDefaultWeightsForStyle(opt.value),
+                  })
+                }
+                className={cn(
+                  "rounded-lg border px-2 py-1.5 text-xs font-medium transition-colors",
+                  value.style === opt.value
+                    ? "border-emerald-600 bg-emerald-50 text-emerald-700"
+                    : "border-stone-200 text-stone-600 hover:border-stone-300 hover:bg-stone-50",
+                )}
+              >
+                {opt.label}
+              </button>
+            ))}
           </div>
-        ))}
-        <p className="text-xs text-stone-400">
-          当前主风格：
-          <span className="font-medium text-emerald-700">
-            {STYLE_OPTIONS.find((s) => s.value === value.style)?.label}
-          </span>
-        </p>
+        </Field>
+
+        <div className="space-y-3">
+          <p className="text-xs font-medium text-stone-600">风格混合度</p>
+          {STYLE_OPTIONS.map((opt) => (
+            <div key={opt.value} className="flex items-center gap-3">
+              <span className="w-16 text-xs text-stone-500">{opt.label}</span>
+              <input
+                type="range"
+                min={0}
+                max={100}
+                value={value.styleWeights[opt.value]}
+                onChange={(e) => updateStyleWeight(opt.value, Number(e.target.value))}
+                className="h-1.5 flex-1 cursor-pointer appearance-none rounded-full bg-stone-200 accent-emerald-600"
+              />
+              <span className="w-8 text-right text-xs font-medium text-stone-600">
+                {value.styleWeights[opt.value]}
+              </span>
+            </div>
+          ))}
+        </div>
       </div>
 
       <SectionTitle icon="🔍" title="更多筛选" />
@@ -449,15 +464,8 @@ export function BabyInfoForm({
               likedChars: "",
               tabooChars: "",
               notes: "",
-              styleWeights: {
-                classical: 50,
-                modern: 50,
-                literary: 50,
-                majestic: 50,
-                elegant: 50,
-                cute: 50,
-                neutral: 50,
-              },
+              style: "literary",
+              styleWeights: getDefaultWeightsForStyle("literary"),
             })
           }
           className="rounded-xl border border-stone-200 px-5 py-2.5 text-sm font-medium text-stone-600 transition-colors hover:bg-stone-50"
