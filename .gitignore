@@ -33,9 +33,24 @@ yarn-error.log*
 # env files (can opt-in for committing if needed)
 .env*
 
+# 字库生成进度文件（断点续传用，不入库）
+src/data/characters/.progress.json
+
+# playwright 截图
+.playwright-mcp/
+
 # vercel
 .vercel
 
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# AI agent internal state
+.agent/
+
+# screenshots / temp images
+*.png
+*.jpg
+!public/**/*.png
+!public/**/*.jpg
