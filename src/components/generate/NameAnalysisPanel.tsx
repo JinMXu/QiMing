@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils/cn";
 import type { CandidateName, BaziInfo, Wuxing, NameStyle, NameStyleProfile } from "@/types";
 import { WUXING_LABELS } from "@/types";
 import { STYLE_LABELS } from "@/lib/utils/style";
-import { HeartIcon } from "./icons";
+import { HeartIcon, FileTextIcon, CheckCircleIcon, AlertTriangleIcon } from "@/components/ui/icons";
 
 type TabKey = "bazi" | "phonetic" | "glyph" | "meaning" | "poetry" | "taboo";
 
@@ -164,9 +164,10 @@ export function NameAnalysisPanel({
         {onShowReport && (
           <button
             onClick={onShowReport}
-            className="mt-5 w-full rounded-xl border border-stone-200 py-2.5 text-sm font-medium text-stone-600 transition-colors hover:bg-stone-50"
+            className="mt-5 flex w-full items-center justify-center gap-1.5 rounded-xl border border-stone-200 py-2.5 text-sm font-medium text-stone-600 transition-colors hover:bg-stone-50"
           >
-            📄 查看完整解析报告
+            <FileTextIcon className="h-4 w-4" />
+            查看完整解析报告
           </button>
         )}
       </div>
@@ -290,14 +291,16 @@ function TabooBlock({ check }: { check: CandidateName["tabooCheck"] }) {
   return (
     <div>
       {check.passed && issues.length === 0 ? (
-        <div className="rounded-xl bg-emerald-50 p-4 text-sm text-emerald-800">
-          ✅ 未发现谐音、生僻字、多音字等问题
+        <div className="flex items-center gap-1.5 rounded-xl bg-emerald-50 p-4 text-sm text-emerald-800">
+          <CheckCircleIcon className="h-4 w-4 shrink-0" />
+          未发现谐音、生僻字、多音字等问题
         </div>
       ) : (
         <div className="space-y-2">
           {issues.map((issue, i) => (
-            <div key={i} className="rounded-xl bg-amber-50 p-3 text-sm text-amber-800">
-              ⚠️ {issue}
+            <div key={i} className="flex items-center gap-1.5 rounded-xl bg-amber-50 p-3 text-sm text-amber-800">
+              <AlertTriangleIcon className="h-4 w-4 shrink-0" />
+              {issue}
             </div>
           ))}
         </div>

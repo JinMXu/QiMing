@@ -1,28 +1,36 @@
 import Link from "next/link";
+import {
+  FlameIcon,
+  ScrollIcon,
+  MusicIcon,
+  CalculatorIcon,
+  ShieldAlertIcon,
+  LanternIcon,
+} from "@/components/ui/icons";
 
 const FEATURES = [
   {
-    icon: "🔥",
+    icon: FlameIcon,
     title: "八字五行",
     desc: "依据生辰排盘，分析五行缺漏，取喜用神补益之名",
   },
   {
-    icon: "📜",
+    icon: ScrollIcon,
     title: "诗词典故",
     desc: "从《诗经》《楚辞》唐诗宋词中寻字，每个名字皆有出处",
   },
   {
-    icon: "🎵",
+    icon: MusicIcon,
     title: "音律字形",
     desc: "平仄声调相协，康熙笔画均衡，读着顺口写着好看",
   },
   {
-    icon: "🧮",
+    icon: CalculatorIcon,
     title: "算法推荐",
     desc: "多维度加权评分，从万千组合中筛出最优候选",
   },
   {
-    icon: "⚠️",
+    icon: ShieldAlertIcon,
     title: "避讳查重",
     desc: "自动检测不良谐音、生僻字，避开名人重名",
   },
@@ -33,8 +41,9 @@ export default function Home() {
     <div className="flex flex-1 flex-col items-center bg-gradient-to-b from-amber-50 via-white to-white">
       {/* Hero */}
       <section className="flex w-full flex-col items-center px-6 py-24 text-center">
-        <span className="mb-6 inline-block rounded-full bg-amber-100 px-4 py-1.5 text-sm font-medium text-amber-800">
-          🏮 一名启一生
+        <span className="mb-6 inline-flex items-center gap-1.5 rounded-full bg-amber-100 px-4 py-1.5 text-sm font-medium text-amber-800">
+          <LanternIcon className="h-4 w-4" />
+          一名启一生
         </span>
         <h1 className="mb-6 text-6xl font-bold tracking-tight text-stone-800">
           启名
@@ -72,7 +81,9 @@ export default function Home() {
               key={f.title}
               className="rounded-2xl border border-stone-100 bg-white p-6 shadow-sm transition-shadow hover:shadow-md"
             >
-              <div className="mb-3 text-3xl">{f.icon}</div>
+              <div className="mb-3 flex h-11 w-11 items-center justify-center rounded-xl bg-amber-50 text-amber-600">
+                <f.icon className="h-5 w-5" />
+              </div>
               <h3 className="mb-2 text-lg font-semibold text-stone-800">
                 {f.title}
               </h3>

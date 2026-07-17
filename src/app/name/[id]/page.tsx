@@ -19,6 +19,7 @@ import {
   removeFavorite,
   type FavoriteItem,
 } from "@/lib/utils/storage";
+import { SearchIcon } from "@/components/ui/icons";
 
 export default function NameDetailPage() {
   const params = useParams<{ id: string }>();
@@ -60,7 +61,9 @@ export default function NameDetailPage() {
     return (
       <div className="mx-auto w-full max-w-2xl px-6 py-16">
         <div className="rounded-2xl border border-dashed border-stone-300 bg-stone-50 p-12 text-center">
-          <div className="mb-3 text-4xl">🔍</div>
+          <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-stone-100">
+            <SearchIcon className="h-6 w-6 text-stone-400" />
+          </div>
           <h1 className="mb-2 text-xl font-bold text-stone-700">名字未找到</h1>
           <p className="mb-5 text-sm text-stone-500">
             「{fullName}」不在本地缓存中，可能已被清理或来自其他设备。请重新生成名字后查看。

@@ -3,6 +3,8 @@
  * 介绍取名原理与数据来源
  */
 
+import { AlertTriangleIcon } from "@/components/ui/icons";
+
 const PRINCIPLES = [
   {
     title: "八字五行",
@@ -48,8 +50,9 @@ export default function AboutPage() {
         </div>
 
         <div className="mt-12 rounded-2xl bg-amber-50 p-6 text-center">
-          <p className="text-sm text-amber-800">
-            ⚠️ 启名提供的分析仅供参考，名字的好坏最终在于父母的期许与孩子的成长。
+          <p className="flex items-center justify-center gap-1.5 text-sm text-amber-800">
+            <AlertTriangleIcon className="h-4 w-4 shrink-0" />
+            启名提供的分析仅供参考，名字的好坏最终在于父母的期许与孩子的成长。
           </p>
         </div>
       </div>

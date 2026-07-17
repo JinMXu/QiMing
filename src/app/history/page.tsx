@@ -9,6 +9,7 @@ import {
   type HistoryItem,
 } from "@/lib/utils/storage";
 import { cn } from "@/lib/utils/cn";
+import { ClockIcon } from "@/components/ui/icons";
 
 export default function HistoryPage() {
   const [history, setHistory] = useState<HistoryItem[]>([]);
@@ -49,7 +50,9 @@ export default function HistoryPage() {
 
       {history.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-stone-200 bg-white py-20 text-center">
-          <div className="mb-3 text-4xl">🕐</div>
+          <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-stone-100">
+            <ClockIcon className="h-6 w-6 text-stone-400" />
+          </div>
           <h3 className="text-lg font-semibold text-stone-700">暂无历史记录</h3>
           <p className="mt-1 text-sm text-stone-500">每次生成名字后都会保存在这里</p>
           <Link

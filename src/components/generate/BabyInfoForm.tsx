@@ -23,6 +23,12 @@ import {
   lunarToSolar,
 } from "@/lib/utils/calendar";
 import { Solar } from "lunar-javascript";
+import {
+  BabyIcon,
+  SparklesIcon,
+  PaletteIcon,
+  SearchIcon,
+} from "@/components/ui/icons";
 
 const GENDER_OPTIONS: { value: Gender; label: string }[] = [
   { value: "male", label: "男孩" },
@@ -108,7 +114,7 @@ export function BabyInfoForm({
 
   return (
     <div className={cn("space-y-5", compact ? "" : "rounded-2xl border border-stone-200 bg-white p-6 shadow-sm")}>
-      <SectionTitle icon="👶" title="宝宝信息" />
+      <SectionTitle icon={<BabyIcon className="h-4 w-4" />} title="宝宝信息" />
 
       {/* 姓氏 + 性别 + 名字字数 */}
       <div className="grid grid-cols-1 gap-4">
@@ -278,7 +284,7 @@ export function BabyInfoForm({
         )}
       </Field>
 
-      <SectionTitle icon="✨" title="名字设置" />
+      <SectionTitle icon={<SparklesIcon className="h-4 w-4" />} title="名字设置" />
 
       <div className="grid grid-cols-1 gap-4">
         <Field label="辈分字（选填）">
@@ -339,7 +345,7 @@ export function BabyInfoForm({
         </Field>
       </div>
 
-      <SectionTitle icon="🎨" title="风格偏好" />
+      <SectionTitle icon={<PaletteIcon className="h-4 w-4" />} title="风格偏好" />
 
       <div className="space-y-4 rounded-xl border border-stone-100 bg-stone-50/50 p-3">
         <Field label="风格基调">
@@ -389,7 +395,7 @@ export function BabyInfoForm({
         </div>
       </div>
 
-      <SectionTitle icon="🔍" title="更多筛选" />
+      <SectionTitle icon={<SearchIcon className="h-4 w-4" />} title="更多筛选" />
 
       <div className="grid grid-cols-2 gap-3">
         <FilterToggle
@@ -479,7 +485,8 @@ export function BabyInfoForm({
             </>
           ) : (
             <>
-              ✨ 生成好名
+              <SparklesIcon className="h-4 w-4" />
+              生成好名
             </>
           )}
         </button>
@@ -578,10 +585,10 @@ function LunarDatetimePicker({
   );
 }
 
-function SectionTitle({ icon, title }: { icon: string; title: string }) {
+function SectionTitle({ icon, title }: { icon: React.ReactNode; title: string }) {
   return (
     <h3 className="flex items-center gap-2 text-sm font-bold text-stone-800">
-      <span>{icon}</span>
+      <span className="text-amber-600">{icon}</span>
       {title}
     </h3>
   );

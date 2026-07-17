@@ -33,6 +33,21 @@ import {
 } from "@/lib/utils/storage";
 import { cn } from "@/lib/utils/cn";
 import { getDefaultWeightsForStyle } from "@/lib/utils/style";
+import {
+  SearchIcon,
+  BarChartIcon,
+  CompassIcon,
+  FlameIcon,
+  MusicIcon,
+  PenLineIcon,
+  LightbulbIcon,
+  ScrollIcon,
+  ShieldAlertIcon,
+  GaugeIcon,
+  CheckCircleIcon,
+  AlertTriangleIcon,
+  XIcon,
+} from "@/components/ui/icons";
 
 const DEFAULT_STYLE_WEIGHTS = getDefaultWeightsForStyle("literary");
 
@@ -401,7 +416,7 @@ export default function GeneratePage() {
               className="ml-3 text-amber-400 hover:text-amber-600"
               aria-label="关闭提示"
             >
-              ✕
+              <XIcon className="h-4 w-4" />
             </button>
           </div>
         </div>
@@ -497,7 +512,10 @@ export default function GeneratePage() {
                   />
                 ) : isAnalyzing ? (
                   <div className="flex h-48 items-center justify-center rounded-2xl border border-dashed border-amber-200 bg-amber-50 text-amber-600">
-                    <span className="animate-pulse">🔍 正在解析「{selectedName.fullName}」…</span>
+                    <span className="flex items-center gap-2 animate-pulse">
+                      <SearchIcon className="h-4 w-4" />
+                      正在解析「{selectedName.fullName}」…
+                    </span>
                   </div>
                 ) : (
                   <div className="flex h-48 items-center justify-center rounded-2xl border border-dashed border-stone-200 text-stone-400">
@@ -534,6 +552,21 @@ function normalizeBazi(data: unknown): BaziInfo | null {
   };
 }
 
+function ReportSectionTitle({
+  icon: Icon,
+  title,
+}: {
+  icon: (props: { className?: string }) => React.ReactNode;
+  title: string;
+}) {
+  return (
+    <h3 className="mb-2 flex items-center gap-1.5 text-base font-semibold text-stone-700">
+      <Icon className="h-4 w-4 text-amber-600" />
+      {title}
+    </h3>
+  );
+}
+
 function ReportModal({
   name,
   bazi,
@@ -557,12 +590,12 @@ function ReportModal({
             onClick={onClose}
             className="rounded-full p-2 text-stone-400 hover:bg-stone-100 hover:text-stone-600"
           >
-            ✕
+            <XIcon className="h-4 w-4" />
           </button>
         </div>
         <div className="space-y-6 px-6 py-5">
           <section>
-            <h3 className="mb-3 text-base font-semibold text-stone-700">📊 评分总览</h3>
+            <ReportSectionTitle icon={BarChartIcon} title="评分总览" />
             <div className="grid grid-cols-5 gap-3">
               {(
                 [
@@ -594,7 +627,7 @@ function ReportModal({
 
           {bazi && (
             <section>
-              <h3 className="mb-2 text-base font-semibold text-stone-700">🔮 八字五行分析</h3>
+              <ReportSectionTitle icon={CompassIcon} title="八字五行分析" />
               <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
                 {bazi.summary}
               </div>
@@ -602,24 +635,24 @@ function ReportModal({
           )}
 
           <section>
-            <h3 className="mb-2 text-base font-semibold text-stone-700">🔥 五行契合</h3>
+            <ReportSectionTitle icon={FlameIcon} title="五行契合" />
             <p className="text-sm text-stone-600">{name.wuxingAnalysis}</p>
           </section>
           <section>
-            <h3 className="mb-2 text-base font-semibold text-stone-700">🎵 音律分析</h3>
+            <ReportSectionTitle icon={MusicIcon} title="音律分析" />
             <p className="text-sm text-stone-600">{name.phoneticAnalysis}</p>
           </section>
           <section>
-            <h3 className="mb-2 text-base font-semibold text-stone-700">✍️ 字形结构</h3>
+            <ReportSectionTitle icon={PenLineIcon} title="字形结构" />
             <p className="text-sm text-stone-600">{name.glyphAnalysis}</p>
           </section>
           <section>
-            <h3 className="mb-2 text-base font-semibold text-stone-700">💬 寓意解析</h3>
+            <ReportSectionTitle icon={LightbulbIcon} title="寓意解析" />
             <p className="text-sm text-stone-600">{name.meaning}</p>
           </section>
           {name.poetryOrigin && (
             <section>
-              <h3 className="mb-2 text-base font-semibold text-stone-700">📜 出处典故</h3>
+              <ReportSectionTitle icon={ScrollIcon} title="出处典故" />
               <div className="rounded-lg border border-stone-200 bg-stone-50 p-4">
                 <p className="text-lg font-medium text-stone-700">「{name.poetryOrigin.verse}」</p>
                 <p className="mt-2 text-sm text-stone-400">
@@ -630,18 +663,28 @@ function ReportModal({
             </section>
           )}
           <section>
-            <h3 className="mb-2 text-base font-semibold text-stone-700">⚠️ 避讳提醒</h3>
+            <ReportSectionTitle icon={ShieldAlertIcon} title="避讳提醒" />
             <div
               className={cn(
                 "rounded-lg p-4 text-sm",
                 name.tabooCheck.passed ? "bg-emerald-50 text-emerald-700" : "bg-red-50 text-red-700",
               )}
             >
-              {name.tabooCheck.passed ? "✅ 未发现问题" : "⚠️ 有风险"}
+              {name.tabooCheck.passed ? (
+                <span className="flex items-center gap-1.5">
+                  <CheckCircleIcon className="h-4 w-4" />
+                  未发现问题
+                </span>
+              ) : (
+                <span className="flex items-center gap-1.5">
+                  <AlertTriangleIcon className="h-4 w-4" />
+                  有风险
+                </span>
+              )}
             </div>
           </section>
           <section>
-            <h3 className="mb-2 text-base font-semibold text-stone-700">📊 综合评价</h3>
+            <ReportSectionTitle icon={GaugeIcon} title="综合评价" />
             <p className="text-sm text-stone-600">{name.comprehensiveScore}</p>
           </section>
         </div>

@@ -1,30 +1,37 @@
 "use client";
 
 import Link from "next/link";
+import {
+  FlameIcon,
+  ScrollIcon,
+  MusicIcon,
+  CalculatorIcon,
+  ShieldAlertIcon,
+} from "@/components/ui/icons";
 
 const DIMENSIONS = [
   {
-    icon: "🔥",
+    icon: FlameIcon,
     title: "八字五行",
     desc: "依据宝宝生辰排盘，分析四柱天干地支，统计五行分布，找出喜用神。取名时优先使用喜用神对应的五行字，以平衡命局。",
   },
   {
-    icon: "📜",
+    icon: ScrollIcon,
     title: "诗词典故",
     desc: "从《诗经》《楚辞》、唐诗宋词等经典中寻字觅意，让每个名字都有文化出处，读起来有画面感。",
   },
   {
-    icon: "🎵",
+    icon: MusicIcon,
     title: "音律字形",
     desc: "平仄声调相协，避免拗口；笔画结构均衡，避免头重脚轻。让名字读着顺口、写着好看。",
   },
   {
-    icon: "🧮",
+    icon: CalculatorIcon,
     title: "算法推荐",
     desc: "多维度加权评分，从音律、字形、寓意、五行、诗词五个角度综合打分，筛出最优候选。",
   },
   {
-    icon: "⚠️",
+    icon: ShieldAlertIcon,
     title: "避讳查重",
     desc: "自动检测不良谐音、生僻字、多音字，帮助家长避开取名雷区。",
   },
@@ -54,7 +61,9 @@ export default function GuidePage() {
               key={d.title}
               className="rounded-2xl border border-stone-200 bg-white p-5 shadow-sm"
             >
-              <div className="mb-3 text-3xl">{d.icon}</div>
+              <div className="mb-3 flex h-11 w-11 items-center justify-center rounded-xl bg-amber-50 text-amber-600">
+                <d.icon className="h-5 w-5" />
+              </div>
               <h3 className="mb-2 text-lg font-semibold text-stone-800">{d.title}</h3>
               <p className="text-sm leading-relaxed text-stone-500">{d.desc}</p>
             </div>

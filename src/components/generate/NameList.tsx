@@ -5,6 +5,7 @@ import type { CandidateName, Wuxing, NameStyle, NameStyleProfile, RiskLevel } fr
 import { WUXING_LABELS } from "@/types";
 import { STYLE_LABELS } from "@/lib/utils/style";
 import { useEffect, useState } from "react";
+import { HeartIcon, RefreshIcon, FilterIcon } from "@/components/ui/icons";
 
 export type SortKey = "default" | "wuxing" | "phonetic" | "meaning";
 
@@ -526,53 +527,5 @@ function FilterPanel({
         </div>
       </div>
     </>
-  );
-}
-
-function HeartIcon({ filled, className }: { filled?: boolean; className?: string }) {
-  return (
-    <svg
-      className={className}
-      viewBox="0 0 24 24"
-      fill={filled ? "currentColor" : "none"}
-      stroke="currentColor"
-      strokeWidth="1.5"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
-    </svg>
-  );
-}
-
-function RefreshIcon({ className }: { className?: string }) {
-  return (
-    <svg
-      className={className}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.5"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.3" />
-    </svg>
-  );
-}
-
-function FilterIcon({ className }: { className?: string }) {
-  return (
-    <svg
-      className={className}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.5"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
-    </svg>
   );
 }
