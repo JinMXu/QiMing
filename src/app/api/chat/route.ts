@@ -8,10 +8,30 @@ import { NextRequest, NextResponse } from "next/server";
 import type { ChatRequest, ChatResponse } from "@/types";
 import { chatJSON } from "@/lib/llm";
 import { CHAT_SYSTEM_PROMPT } from "@/lib/prompt";
+import { rateLimit, getClientKey } from "@/lib/rateLimit";
+
+export const runtime = "nodejs";
+export const maxDuration = 60;
 
 export async function POST(request: NextRequest) {
+  // 限流：LLM 调用有成本，按 IP 每分钟最多 20 次
+  if (!rateLimit(`chat:${getClientKey(request)}`, 20, 60_000)) {
+    return NextResponse.json(
+      { error: "请求过于频繁，请稍后再试" },
+      { status: 429 },
+    );
+  }
+
   try {
-    const body = (await request.json()) as ChatRequest;
+    let body: ChatRequest;
+    try {
+      body = (await request.json()) as ChatRequest;
+    } catch {
+      return NextResponse.json(
+        { error: "请求体不是合法 JSON" },
+        { status: 400 },
+      );
+    }
 
     if (!body.userMessage?.trim()) {
       return NextResponse.json(

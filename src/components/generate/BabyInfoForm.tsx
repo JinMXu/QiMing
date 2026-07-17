@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo } from "react";
 import type { Gender, NameStyle, NameStyleWeights, FilterOptions } from "@/types";
 import { cn } from "@/lib/utils/cn";
 import {
@@ -20,9 +20,7 @@ import {
   getLunarDayOptions,
   formatDateTimeLocal,
   parseDateTimeLocal,
-  solarToLunarText,
   lunarToSolar,
-  solarToDateTime,
 } from "@/lib/utils/calendar";
 import { Solar } from "lunar-javascript";
 
@@ -83,24 +81,6 @@ export function BabyInfoForm({
     () => getDistricts(value.birthPlaceCity),
     [value.birthPlaceCity],
   );
-
-  const valueRef = useRef(value);
-  valueRef.current = value;
-
-  // 当切换省份时重置市/区
-  useEffect(() => {
-    const cur = valueRef.current;
-    if (cur.birthPlaceProvince && !cities.find((c) => c.code === cur.birthPlaceCity)) {
-      onChange({ ...cur, birthPlaceCity: "", birthPlaceDistrict: "" });
-    }
-  }, [value.birthPlaceProvince, cities, value.birthPlaceCity, onChange]);
-
-  useEffect(() => {
-    const cur = valueRef.current;
-    if (cur.birthPlaceCity && !districts.find((d) => d.code === cur.birthPlaceDistrict)) {
-      onChange({ ...cur, birthPlaceDistrict: "" });
-    }
-  }, [value.birthPlaceCity, districts, value.birthPlaceDistrict, onChange]);
 
   const update = <K extends keyof BabyInfoFormData>(key: K, val: BabyInfoFormData[K]) => {
     onChange({ ...value, [key]: val });
@@ -242,7 +222,15 @@ export function BabyInfoForm({
         <div className="grid grid-cols-[1.2fr_1.5fr_1fr] gap-2">
           <select
             value={value.birthPlaceProvince}
-            onChange={(e) => update("birthPlaceProvince", e.target.value)}
+            onChange={(e) =>
+              // 切换省份时重置市/区（级联重置在事件中完成，不用 effect）
+              onChange({
+                ...value,
+                birthPlaceProvince: e.target.value,
+                birthPlaceCity: "",
+                birthPlaceDistrict: "",
+              })
+            }
             className="input truncate"
           >
             <option value="">省</option>
@@ -254,7 +242,13 @@ export function BabyInfoForm({
           </select>
           <select
             value={value.birthPlaceCity}
-            onChange={(e) => update("birthPlaceCity", e.target.value)}
+            onChange={(e) =>
+              onChange({
+                ...value,
+                birthPlaceCity: e.target.value,
+                birthPlaceDistrict: "",
+              })
+            }
             className="input truncate"
             disabled={!value.birthPlaceProvince}
           >

@@ -52,7 +52,9 @@ function safeSet(key: string, value: unknown): boolean {
   try {
     window.localStorage.setItem(key, JSON.stringify(value));
     return true;
-  } catch {
+  } catch (e) {
+    // 多为 QuotaExceededError（5MB 配额写满）
+    console.warn(`[storage] 写入失败: ${key}`, e);
     return false;
   }
 }
@@ -88,15 +90,43 @@ export function clearFavorites(): void {
 
 // ── 历史记录 ──
 
+/** 保存结果：ok 是否写入成功；degraded 是否为写入做了降级（裁大字段/清旧记录） */
+export interface SaveResult {
+  ok: boolean;
+  degraded: boolean;
+}
+
+/** 去掉历史记录中的大字段（完整生成结果、八字），只保留参数与 top5 摘要 */
+function stripHeavyFields(item: HistoryItem): HistoryItem {
+  return { ...item, names: undefined, baziInfo: undefined };
+}
+
 export function getHistory(): HistoryItem[] {
   return safeGet<HistoryItem[]>(STORAGE_KEYS.history) ?? [];
 }
 
-export function addHistory(item: HistoryItem): HistoryItem[] {
+/**
+ * 追加一条历史记录。
+ * localStorage 配额不足时逐级降级：先去新记录大字段 → 再清旧记录大字段并丢最旧，
+ * 保证至少参数能存下；实在写不进去返回 ok=false（调用方应提示用户）。
+ */
+export function addHistory(item: HistoryItem): SaveResult {
   const history = getHistory();
-  const next = [item, ...history].slice(0, 50);
-  safeSet(STORAGE_KEYS.history, next);
-  return next;
+  if (safeSet(STORAGE_KEYS.history, [item, ...history].slice(0, 50))) {
+    return { ok: true, degraded: false };
+  }
+  // 降级 1：新记录只存参数与 top5
+  const lightList = [stripHeavyFields(item), ...history].slice(0, 50);
+  if (safeSet(STORAGE_KEYS.history, lightList)) {
+    return { ok: true, degraded: true };
+  }
+  // 降级 2：旧记录也去掉大字段，再从最旧开始逐条丢弃直到能写入
+  const shrunk = [stripHeavyFields(item), ...history.map(stripHeavyFields)].slice(0, 50);
+  while (shrunk.length > 0) {
+    if (safeSet(STORAGE_KEYS.history, shrunk)) return { ok: true, degraded: true };
+    shrunk.pop();
+  }
+  return { ok: false, degraded: true };
 }
 
 export function removeHistory(id: string): HistoryItem[] {
@@ -115,6 +145,7 @@ export function clearHistory(): void {
 /**
  * 缓存最近一次生成的名字列表（合并去重，最多保留 50 个）。
  * 后续 /name/[id] 详情页通过 fullName 从中查找。
+ * 配额不足时逐步缩减缓存数量（保留最新的），缓存非关键数据，写不进就放弃。
  */
 export function cacheLastNames(names: CandidateName[]): void {
   if (names.length === 0) return;
@@ -124,7 +155,9 @@ export function cacheLastNames(names: CandidateName[]): void {
   for (const n of existing) map.set(n.fullName, n);
   for (const n of names) map.set(n.fullName, n);
   const merged = Array.from(map.values()).slice(-LAST_NAMES_MAX);
-  safeSet(STORAGE_KEYS.lastNames, merged);
+  for (let limit = merged.length; limit >= 1; limit = Math.floor(limit / 2)) {
+    if (safeSet(STORAGE_KEYS.lastNames, merged.slice(-limit))) return;
+  }
 }
 
 /** 根据 fullName 查找缓存的名字 */

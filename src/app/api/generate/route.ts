@@ -13,23 +13,50 @@ import {
   buildGenerateUserPrompt,
 } from "@/lib/prompt";
 import { computeBazi } from "@/lib/bazi/compute";
+import { rateLimit, getClientKey } from "@/lib/rateLimit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+// 流式生成可能持续较久，显式放宽函数超时（平台支持时生效）
+export const maxDuration = 60;
+
+const JSON_HEADERS = { "Content-Type": "application/json" };
 
 export async function POST(request: NextRequest) {
-  const body = (await request.json()) as GenerateRequest;
+  // 限流：LLM 调用有成本，按 IP 每分钟最多 10 次
+  if (!rateLimit(`gen:${getClientKey(request)}`, 10, 60_000)) {
+    return new Response(
+      JSON.stringify({ error: "请求过于频繁，请稍后再试" }),
+      { status: 429, headers: JSON_HEADERS },
+    );
+  }
+
+  let body: GenerateRequest;
+  try {
+    body = (await request.json()) as GenerateRequest;
+  } catch {
+    return new Response(
+      JSON.stringify({ error: "请求体不是合法 JSON" }),
+      { status: 400, headers: JSON_HEADERS },
+    );
+  }
 
   // 参数校验
   if (!body.surname || body.surname.length > 2) {
     return new Response(
       JSON.stringify({ error: "请提供有效的姓氏（1-2 字）" }),
-      { status: 400, headers: { "Content-Type": "application/json" } },
+      { status: 400, headers: JSON_HEADERS },
     );
   }
 
   const count = Math.min(Math.max(body.count ?? 8, 1), 12);
   console.log(`[generate] 请求生成 ${count} 个名字 | 姓氏=${body.surname} | 风格=${body.style}`);
+
+  // 服务端八字：优先于 LLM 排盘，确保四柱/五行/喜用神准确
+  const serverBazi =
+    body.useBazi && body.birthDateTime
+      ? computeBazi(body.birthDateTime, body.birthPlace)
+      : null;
 
   const encoder = new TextEncoder();
   const stream = new ReadableStream({
@@ -54,10 +81,12 @@ export async function POST(request: NextRequest) {
           return; // 跳过无法解析的行
         }
 
-        // 八字行（有 summary / pillars 字段）
+        // 八字行（有 summary / pillars 字段）：服务端已发送时忽略 LLM 的版本
         if (obj.summary && obj.pillars) {
-          baziSent = true;
-          send({ type: "bazi", data: obj });
+          if (!baziSent) {
+            baziSent = true;
+            send({ type: "bazi", data: obj });
+          }
           return;
         }
 
@@ -69,7 +98,13 @@ export async function POST(request: NextRequest) {
       };
 
       try {
-        const userPrompt = buildGenerateUserPrompt({ ...body, count });
+        // 先推送服务端八字，前端可立即展示命盘
+        if (serverBazi) {
+          baziSent = true;
+          send({ type: "bazi", data: serverBazi });
+        }
+
+        const userPrompt = buildGenerateUserPrompt({ ...body, count }, serverBazi);
 
         let buffer = "";
         let fullText = ""; // 累积完整响应文本，供回退解析
@@ -103,18 +138,10 @@ export async function POST(request: NextRequest) {
             nameTotal++;
             send({ type: "name", data: name });
           }
-          if (extracted.bazi) {
+          // 服务端已发送八字时不覆盖（LLM 排盘不可信）
+          if (extracted.bazi && !baziSent) {
             baziSent = true;
             send({ type: "bazi", data: extracted.bazi });
-          }
-        }
-
-        // 服务端八字回退：如果用户请求了八字但 LLM 没输出，服务端自己计算
-        if (!baziSent && body.useBazi && body.birthDateTime) {
-          const serverBazi = computeBazi(body.birthDateTime, body.birthPlace);
-          if (serverBazi) {
-            console.log(`[generate] 服务端计算八字（LLM 未返回）`);
-            send({ type: "bazi", data: serverBazi });
           }
         }
 

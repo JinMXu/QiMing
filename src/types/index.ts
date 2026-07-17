@@ -110,7 +110,7 @@ export interface GenerateRequest {
   surname: string;
   /** 性别 */
   gender: Gender;
-  /** 出生日期时间（公历，ISO 字符串或自由文本） */
+  /** 出生日期时间（本地时间字符串 YYYY-MM-DDTHH:mm，不带时区；农历已在前端转为公历） */
   birthDateTime?: string;
   /** 出生地（用于真太阳时校正，可选） */
   birthPlace?: string;
@@ -176,6 +176,12 @@ export interface CandidateName {
   recommendation: string;
   /** 风格画像（各风格维度 0-100 的占比倾向） */
   styleProfile?: NameStyleProfile;
+  /** 是否已完成深度分析（避免重复调用分析接口） */
+  analyzed?: boolean;
+  /** 名字各汉字的五行（列表阶段 LLM 给出） */
+  charWuxing?: Wuxing[];
+  /** 列表阶段的风险预判（深度分析后以 tabooCheck 为准） */
+  riskLevel?: RiskLevel;
 }
 
 export interface NameScores {
@@ -217,6 +223,9 @@ export interface TabooCheck {
   maxStrokes: number;
 }
 
+/** 风险等级 */
+export type RiskLevel = "low" | "medium" | "high";
+
 /** 快速列表名字（仅基础信息，用于流式推送） */
 export interface NameSummary {
   /** 完整姓名 */
@@ -235,6 +244,10 @@ export interface NameSummary {
   recommendation: string;
   /** 风格画像（各风格维度 0-100 的占比倾向） */
   styleProfile?: NameStyleProfile;
+  /** 名字各汉字的五行（列表阶段 LLM 给出，用于五行补益筛选） */
+  charWuxing?: Wuxing[];
+  /** 风险预判（列表阶段 LLM 给出） */
+  risk?: RiskLevel;
 }
 
 /** LLM 生成接口的返回结构 */
@@ -255,6 +268,8 @@ export interface AnalyzeRequest {
   surname: string;
   gender: Gender;
   style: NameStyle;
+  /** 出生地（用于真太阳时校正，可选） */
+  birthPlace?: string;
   birthDateTime?: string;
   useBazi?: boolean;
   calendarType?: "solar" | "lunar";

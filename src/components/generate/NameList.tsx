@@ -1,9 +1,8 @@
 "use client";
 
 import { cn } from "@/lib/utils/cn";
-import type { CandidateName, Wuxing, NameStyle, NameStyleProfile } from "@/types";
+import type { CandidateName, Wuxing, NameStyle, NameStyleProfile, RiskLevel } from "@/types";
 import { WUXING_LABELS } from "@/types";
-import { isFavorite } from "@/lib/utils/storage";
 import { STYLE_LABELS } from "@/lib/utils/style";
 import { useEffect, useState } from "react";
 
@@ -13,6 +12,8 @@ interface NameListProps {
   names: CandidateName[];
   selectedIndex: number | null;
   compareNames: string[];
+  /** 已收藏的名字集合（父组件统一维护，保证心形状态实时同步） */
+  favorites: Set<string>;
   sort: SortKey;
   onSortChange: (sort: SortKey) => void;
   onSelect: (index: number) => void;
@@ -29,11 +30,11 @@ const SORT_OPTIONS: { value: SortKey; label: string }[] = [
   { value: "meaning", label: "寓意优先" },
 ];
 
-type RiskLevel = "all" | "low" | "medium" | "high";
+type RiskFilter = RiskLevel | "all";
 
 interface FilterState {
   minScore: 0 | 85 | 90;
-  riskLevel: RiskLevel;
+  riskLevel: RiskFilter;
   hasPoetry: boolean;
   wuxingBoost: Wuxing[];
 }
@@ -74,6 +75,7 @@ export function NameList({
   names,
   selectedIndex,
   compareNames,
+  favorites,
   sort,
   onSortChange,
   onSelect,
@@ -82,15 +84,10 @@ export function NameList({
   onRefresh,
   loading,
 }: NameListProps) {
-  const [favorites, setFavorites] = useState<Set<string>>(new Set());
   const [filter, setFilter] = useState<FilterState>(DEFAULT_FILTER);
   const [filterOpen, setFilterOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 8;
-
-  useEffect(() => {
-    setFavorites(new Set(names.map((n) => n.fullName).filter(isFavorite)));
-  }, [names]);
 
   // 筛选/排序/数据变化时回到第 1 页
   useEffect(() => {
@@ -117,7 +114,8 @@ export function NameList({
     if (filter.riskLevel !== "all" && getRiskLevel(name) !== filter.riskLevel) return false;
     if (filter.hasPoetry && !name.poetryOrigin) return false;
     if (filter.wuxingBoost.length > 0) {
-      const boosts = extractWuxingFromAnalysis(name.wuxingAnalysis);
+      // 优先用列表阶段 LLM 给出的逐字五行；缺失时回退到从五行分析文本提取
+      const boosts = name.charWuxing ?? extractWuxingFromAnalysis(name.wuxingAnalysis);
       if (!filter.wuxingBoost.some((w) => boosts.includes(w))) return false;
     }
     return true;
@@ -363,18 +361,23 @@ function StyleTag({ profile }: { profile?: NameStyleProfile }) {
   );
 }
 
-function getRiskLevel(name: CandidateName): "low" | "medium" | "high" {
-  if (!name.tabooCheck.passed) return "high";
-  if (
-    name.tabooCheck.homophoneWarnings.length > 0 ||
-    name.tabooCheck.hasRareChar ||
-    name.tabooCheck.hasPolyphonic
-  )
-    return "medium";
-  return "low";
+function getRiskLevel(name: CandidateName): RiskLevel {
+  // 深度分析完成后以真实 tabooCheck 为准
+  if (name.analyzed) {
+    if (!name.tabooCheck.passed) return "high";
+    if (
+      name.tabooCheck.homophoneWarnings.length > 0 ||
+      name.tabooCheck.hasRareChar ||
+      name.tabooCheck.hasPolyphonic
+    )
+      return "medium";
+    return "low";
+  }
+  // 列表阶段用 LLM 给出的风险预判
+  return name.riskLevel ?? "low";
 }
 
-function RiskBadge({ level }: { level: "low" | "medium" | "high" }) {
+function RiskBadge({ level }: { level: RiskLevel }) {
   const map = {
     low: { label: "风险低", className: "bg-emerald-50 text-emerald-700" },
     medium: { label: "风险中", className: "bg-amber-50 text-amber-700" },
@@ -385,22 +388,6 @@ function RiskBadge({ level }: { level: "low" | "medium" | "high" }) {
     <span className={cn("rounded-full px-2 py-0.5 text-[10px] font-medium", className)}>
       {label}
     </span>
-  );
-}
-
-function WuxingTags({ analysis }: { analysis: string }) {
-  const list = extractWuxingFromAnalysis(analysis);
-  return (
-    <div className="flex flex-wrap gap-1">
-      {list.map((wx) => (
-        <span
-          key={wx}
-          className={cn("rounded border px-1.5 py-0.5 text-[10px] font-medium", WUXING_COLORS[wx])}
-        >
-          {WUXING_LABELS[wx]}
-        </span>
-      ))}
-    </div>
   );
 }
 
@@ -420,7 +407,7 @@ function FilterPanel({
     { v: 90, label: "≥90" },
     { v: 85, label: "≥85" },
   ];
-  const riskOptions: { v: RiskLevel; label: string }[] = [
+  const riskOptions: { v: RiskFilter; label: string }[] = [
     { v: "all", label: "全部" },
     { v: "low", label: "低" },
     { v: "medium", label: "中" },

@@ -10,12 +10,9 @@ import type {
   GenerateRequest,
   CandidateName,
   NameSummary,
-  Gender,
-  NameStyle,
   FilterOptions,
   AnalyzeResponse,
   BaziInfo,
-  NameStyleWeights,
 } from "@/types";
 import { BabyInfoForm, type BabyInfoFormData } from "@/components/generate/BabyInfoForm";
 import { NameList, type SortKey } from "@/components/generate/NameList";
@@ -95,6 +92,12 @@ export default function GeneratePage() {
 
   // 顶部提示（用于历史回填等场景）
   const [notice, setNotice] = useState<string | null>(null);
+
+  // names 的最新值镜像（SSE 完成回调里需要拿到含分析结果的最新列表存入历史）
+  const namesRef = useRef<CandidateName[]>([]);
+  useEffect(() => {
+    namesRef.current = names;
+  }, [names]);
 
   // compareList 跨页持久化（sessionStorage），从 /saved 加入对比后能在 /generate 看到
   const compareInitialized = useRef(false);
@@ -240,14 +243,18 @@ export default function GeneratePage() {
               const s = event.data as NameSummary;
               const candidate: CandidateName = {
                 ...s,
+                analyzed: false,
+                charWuxing: s.charWuxing,
+                riskLevel: s.risk,
                 wuxingAnalysis: "",
                 phoneticAnalysis: "",
                 glyphAnalysis: "",
                 comprehensiveScore: "",
                 tabooCheck: {
-                  passed: true,
+                  // 列表阶段先用 LLM 的风险预判，深度分析后会被真实结果覆盖
+                  passed: s.risk !== "high",
                   homophoneWarnings: [],
-                  hasRareChar: false,
+                  hasRareChar: s.risk === "medium",
                   hasPolyphonic: false,
                   maxStrokes: 0,
                 },
@@ -257,20 +264,29 @@ export default function GeneratePage() {
               if (nameList.length === 1) setSelectedIdx(0);
             } else if (event.type === "done") {
               setLoading(false);
-              cacheLastNames(nameList);
+              // 合并流式期间已完成深度分析的名字（namesRef 持有最新状态）
+              const finalNames = nameList.map(
+                (n) => namesRef.current.find((r) => r.fullName === n.fullName) ?? n,
+              );
+              cacheLastNames(finalNames);
               // 保存历史记录（含完整结果，便于「重新加载」直接恢复结果页）
-              addHistory({
+              const saveResult = addHistory({
                 id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
                 timestamp: new Date().toISOString(),
                 request: req,
                 formSnapshot: form,
-                topNames: nameList.slice(0, 5).map((n) => ({
+                topNames: finalNames.slice(0, 5).map((n) => ({
                   fullName: n.fullName,
                   score: n.score,
                 })),
-                names: nameList,
+                names: finalNames,
                 baziInfo: savedBazi,
               });
+              if (!saveResult.ok) {
+                setNotice("浏览器存储空间不足，本次历史记录保存失败，可在设置页清理旧数据");
+              } else if (saveResult.degraded) {
+                setNotice("浏览器存储空间不足，本次历史仅保存了参数，未保存完整结果");
+              }
             }
           } catch {
             /* skip malformed */
@@ -291,7 +307,8 @@ export default function GeneratePage() {
       if (!name) return;
       const key = name.fullName;
 
-      if (analyses.has(key)) return;
+      // 已有缓存或已完成分析（含历史恢复的名字）时跳过
+      if (analyses.has(key) || name.analyzed) return;
 
       setAnalyzing(key);
       try {
@@ -304,6 +321,7 @@ export default function GeneratePage() {
             surname: form.surname,
             gender: form.gender,
             style: form.style,
+            birthPlace: "birthPlace" in req ? req.birthPlace : undefined,
             birthDateTime: "birthDateTime" in req ? req.birthDateTime : undefined,
             useBazi: form.useBazi,
             calendarType: form.calendarType,
@@ -312,7 +330,7 @@ export default function GeneratePage() {
         if (!res.ok) throw new Error("分析失败");
         const data = (await res.json()) as AnalyzeResponse;
 
-        const updatedName = { ...name, ...data };
+        const updatedName = { ...name, ...data, analyzed: true };
         setNames((prev) => prev.map((n) => (n.fullName === key ? updatedName : n)));
         setAnalyses((prev) => new Map(prev).set(key, data));
         cacheLastNames([updatedName]);
@@ -364,7 +382,10 @@ export default function GeneratePage() {
   const hasResults = names.length > 0;
   const selectedName = selectedIdx != null ? names[selectedIdx] : null;
   const isAnalyzing = selectedName ? analyzing === selectedName.fullName : false;
-  const hasAnalysis = selectedName ? analyses.has(selectedName.fullName) : false;
+  // 已分析过（含历史恢复带来的分析结果）直接展示，不再重复请求
+  const hasAnalysis = selectedName
+    ? analyses.has(selectedName.fullName) || Boolean(selectedName.analyzed)
+    : false;
 
   return (
     <div className="flex flex-1 flex-col">
@@ -449,6 +470,7 @@ export default function GeneratePage() {
                 names={names}
                 selectedIndex={selectedIdx}
                 compareNames={compareNames}
+                favorites={favorites}
                 sort={sort}
                 onSortChange={setSort}
                 onSelect={handleSelect}

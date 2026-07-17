@@ -1,36 +1,13 @@
 /**
  * 公历/农历转换工具
  * 基于 lunar-javascript
+ *
+ * 注意：提交给后端的出生时间统一为「不带时区的本地时间字符串」（YYYY-MM-DDTHH:mm），
+ * 由服务端按字面解析。不要用 Date.toISOString()（UTC），否则前后端时区不一致时
+ * 会导致日期/时辰漂移，八字排盘出错。
  */
 
 import { Solar, Lunar, LunarMonth, LunarYear } from "lunar-javascript";
-
-/**
- * 将公历日期时间转换为 ISO 字符串（用于提交给后端）
- * @param year 公历年
- * @param month 公历月（1-12）
- * @param day 公历日
- * @param hour 小时（0-23）
- * @param minute 分钟
- */
-export function solarToDateTime(
-  year: number,
-  month: number,
-  day: number,
-  hour: number,
-  minute: number,
-): Date {
-  const solar = Solar.fromYmdHms(year, month, day, hour, minute, 0);
-  const date = new Date(
-    solar.getYear(),
-    solar.getMonth() - 1,
-    solar.getDay(),
-    solar.getHour(),
-    solar.getMinute(),
-    0,
-  );
-  return date;
-}
 
 /**
  * 将农历日期时间转换为公历 Date
@@ -100,7 +77,8 @@ export function parseDateTimeLocal(value: string): {
 }
 
 /**
- * 统一将前端日期时间（公历或农历）转换为提交给后端的 ISO 字符串
+ * 统一将前端日期时间（公历或农历）转换为提交给后端的本地时间字符串
+ * 返回格式：YYYY-MM-DDTHH:mm（不带时区），服务端按字面解析，不受时区影响
  * @param value datetime-local 字符串
  * @param calendarType solar | lunar
  */
@@ -110,13 +88,13 @@ export function convertToSolarDateTime(
 ): string | null {
   const parsed = parseDateTimeLocal(value);
   if (!parsed) return null;
-  const { year, month, day, hour, minute } = parsed;
   try {
-    const date =
-      calendarType === "lunar"
-        ? lunarToSolar(year, month, day, hour, minute)
-        : solarToDateTime(year, month, day, hour, minute);
-    return date.toISOString();
+    if (calendarType === "lunar") {
+      const { year, month, day, hour, minute } = parsed;
+      return formatDateTimeLocal(lunarToSolar(year, month, day, hour, minute));
+    }
+    // 公历：datetime-local 本身就是不带时区的本地时间字符串，原样传递
+    return value;
   } catch {
     return null;
   }
